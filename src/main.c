@@ -7,23 +7,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "automata.h"
-
-const char* TOKEN[] = {
-		"ERROR",
-		"INTEGER",
-		"REAL",
-		"OPERATOR_PLUS",
-		"OPERATOR_MINUS",
-		"OPERATOR_MULT",
-		"OPERATOR_DIV"
-};
+#include "lexic.h"
 
 int main(int argc, char* argv[]){
 	FILE *input;
 	FILE *output;
-
-	char line[256];
 
 	if(argc == 1){
 		printf("Quantidade de argumentos invalido.\n"
@@ -47,9 +35,7 @@ int main(int argc, char* argv[]){
 		}
 	}
 
-	while(fgets(line, 256, input) != NULL){
-		fputs(line, output);
-	}
+	lexicalAnalizer(input, output);
 
 	fclose(input);
 	fclose(output);
