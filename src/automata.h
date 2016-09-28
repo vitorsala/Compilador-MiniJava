@@ -45,6 +45,7 @@ enum recognizedState{
   OP_NOT //!
 };
 
-int automata(char *str, int len);
+int strCmp(const char *str1, int str1len, const char *str2);
+int automata(char *str, int *end);
 
 #endif /* AUTOMATA_H_ */
