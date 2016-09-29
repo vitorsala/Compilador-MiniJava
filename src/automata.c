@@ -45,6 +45,7 @@ int automata(char *str, int *index){
 	if(isdigit(str[*index]))	goto qnum;
 	if(issymbol(str[*index]))	goto qsym;
 	if(isop(str[*index]))		goto qop;
+	(*index)++;
 	return NONE;
 
 qid:
