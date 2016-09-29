@@ -33,8 +33,8 @@ char* getToken(int id, char* word, int len){
 		sprintf(attr, "<NUMBER,%s>", strtrim(word, len));
 		return attr;
 	}
-	else if(id == RESERVED_BOOL){
-		return "<BOOL>";
+	else if(id == RESERVED_BOOLEAN){
+		return "<BOOLEAN>";
 	}
 	else if(id == RESERVED_CLASS){
 		return "<CLASS>";
@@ -191,7 +191,7 @@ void lexicalAnalizer(FILE *input, FILE *output){
 					bufferIndex = 0;
 					buffer[j] = '\0';
 					while(buffer[bufferIndex] != '\0' && buffer[bufferIndex] != '\n'){
-						// Verifiação de uma palavra.
+						// Verificação de uma palavra.
 						int out = automata(buffer + bufferIndex, &k);
 						// Dado uma palavra que foi reconhecida, pegar o token correspondente.
 						char* str = getToken(out, buffer + bufferIndex, k);
