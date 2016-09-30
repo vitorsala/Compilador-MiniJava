@@ -19,9 +19,10 @@ int strCmp(const char *str1, int str1len, const char *str2){
 //Método que remove os espaços vazios de uma String
 char* strtrim(char* s, int len){
 	int i = 0;
-	char *out = (char*) calloc (len, sizeof(char));
+	char *out = (char*) calloc (len + 1, sizeof(char));
 	for(;i < len; i++){
 		out[i] = s[i];
 	}
+	out[i] = '\0';
 	return out;
 }
