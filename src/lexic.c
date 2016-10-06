@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "util.h"
 
+char* ids[MAX_ID_QT];
 
 char* getToken(int id, char* word, int len){
 	int i;

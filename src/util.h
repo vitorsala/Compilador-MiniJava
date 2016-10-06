@@ -8,7 +8,6 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-int strCmp(const char *str1, int str1len, const char *str2);
 char* strtrim(char* s, int len);
 
 #endif /* UTIL_H_ */
