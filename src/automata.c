@@ -54,7 +54,8 @@ int automata(char *str, int *index){
 //Estado id, que verifica por ids ou palavras reservadas
 qid:
     //Verifica se a palavra possui um ponto ou underscore para auxiliar o reconhecimento do token
-	while(str[*index] != '\0' && (isalpha(str[*index]) || str[*index] == '_' || str[*index] == '.')){
+    while(str[*index] != '\0' && (isalpha(str[*index]) || (isdigit(str[*index])) || str[*index] == '_' || str[*index] == '.')){
+        printf("str: %c\n", str[*index]);
 		if(str[*index] == '_')	hasUnderscore = 1;
         //Caso um ponto seja reconhecido, guarda na variável index, que foi passada por referência, a posição do ponto
 		else if(str[*index] == '.' && hasDot == 0)	hasDot = *index;
