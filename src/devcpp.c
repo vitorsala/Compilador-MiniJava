@@ -105,11 +105,14 @@ int main(int argc, char* argv[]){
 
 	fclose(input);
 	fclose(output);
+
+	fprintf(stderr,"Analise lexica finalizado");
+	getchar();
 }
 
 
 // =======================================================================================
-// Analisador Lexico
+// Analisador L√©xico
 // =======================================================================================
 
 
@@ -120,12 +123,12 @@ char* getToken(int id, char* word, int len){
 		attr = (char*) calloc (len + 5, sizeof(char));
 		char* trimmed = strtrim(word, len);
 
-		// No caso do ID, È necess·rio verificar se o ID ja foi utilizado anteriormente
-		// para a recuperaÁ„o do atributo do token.
+		// No caso do ID, √© necess√°rio verificar se o ID ja foi utilizado anteriormente
+		// para a recupera√ß√£o do atributo do token.
 		i = 0;
 		while(ids[i] != NULL){
-			// Para cada ID j· declarado anteriormente, verificar se o ID atual corresponde
-			// a algum dos j· declarados
+			// Para cada ID j√° declarado anteriormente, verificar se o ID atual corresponde
+			// a algum dos j√° declarados
 			if(strCmp(trimmed, len, ids[i])){
 				sprintf(attr,"<ID,%d>",i);
 				return attr;
@@ -137,7 +140,7 @@ char* getToken(int id, char* word, int len){
 		return attr;
 	}
 	else if(id == NUMBER){
-		// Pequeno tratamento de string para adicionar o valor do dÌgito ao atributo.
+		// Pequeno tratamento de string para adicionar o valor do d√≠gito ao atributo.
 		attr = (char*) calloc (len + 9, sizeof(char));
 		sprintf(attr, "<NUMBER,%s>", strtrim(word, len));
 		return attr;
@@ -259,54 +262,76 @@ char* getToken(int id, char* word, int len){
 	return "<ERROR>";
 }
 
-// FunÁ„o do analisador lÈxico
+// Fun√ß√£o do analisador l√©xico
 void lexicalAnalizer(FILE *input, FILE *output){
 	char line[MAX_STR_SIZE];
 	char buffer[MAX_STR_SIZE];
 	int isCmt = 0;
 	int bufferIndex;
 	int i,j,k;
+	int linenum = 0;
 
 	while(fgets(line, MAX_STR_SIZE, input) != NULL){
+		linenum++;
 		i = 0;
 
-		// Elimina os espaÁos em branco antes do texto.
+		// Elimina os espa√ßos em branco antes do texto.
 		while(line[i] == ' ' || line[i] == '\t')	i++;
 
-		// VerificaÁ„o se n„o È um coment·rio de linha
+		// Verifica√ß√£o se n√£o √© um coment√°rio de linha
 		if(!(line[i] == '/' && line[i + 1] == '/')){
 			while(line[i] != '\0' && line[i] != '\n'){
-				// pula os espaÁos em branco.
+				// pula os espa√ßos em branco.
 				while(line[i] == ' ' || line[i] == '\t')	i++;
 
-				// ComeÁo do tratamento da cadeia que ser· verificado no autÙmato.
+				// Come√ßo do tratamento da cadeia que ser√° verificado no automato.
 				j = 0;
 				while(line[i] != ' ' && line[i] != '\0' && line[i] != '\n'){
 
-					// VerificaÁ„o de coment·rio dentro de uma cadeia de caracteres
-					if(!isCmt && line[i] == '/' && line[i + 1] == '*')	isCmt = 1;
-					if(isCmt){	// Se a cadeia estiver apÛs o inÌcio de um coment·rio inline/multi-linha
-						if(line[i] == '*' && line[i + 1] == '/'){	// Verifica o final da cadeia de coment·rio
+					if(!isCmt && line[i] == '/' && line[i + 1] == '/'){
+						line[i] = '\0';
+						break;
+					}
+
+					// Verifica√ß√£o de coment√°rio dentro de uma cadeia de caracteres
+					if(!isCmt && line[i] == '/' && line[i + 1] == '*'){
+						if(j > 0){
+							break;
+						}
+						else{
+							isCmt = 1;
+						}
+					}
+					if(isCmt){	// Se a cadeia estiver ap√≥s o in√≠cio de um coment√°rio inline/multi-linha
+						if(line[i] == '*' && line[i + 1] == '/'){	// Verifica o final da cadeia de coment?rio
 							isCmt = 0;
 							i += 2;
 						}
 						else	i++;
 					}
-					// Se n„o estiver dentro de um coment·rio, adicionar o caractere ao buffer
+					// Se n√£o estiver dentro de um coment√°rio, adicionar o caractere ao buffer
 					else 		buffer[j++] = line[i++];
 				}
-				if(!isCmt){
+				if(!isCmt && j > 0){
 					k = 0;
 					bufferIndex = 0;
 					buffer[j] = '\0';
 					while(buffer[bufferIndex] != '\0' && buffer[bufferIndex] != '\n'){
-						// VerificaÁ„o de uma palavra.
+						// Verifica√ß√£o de uma palavra.
 						int out = automata(buffer + bufferIndex, &k);
+
+
 						// Dado uma palavra que foi reconhecida, pegar o token correspondente.
 						char* str = getToken(out, buffer + bufferIndex, k);
 						// output
-						fprintf(stderr,"%s\n", str);
+						//fprintf(stderr,"%s\n", str);
 						fprintf(output,"%s\n", str);
+
+						if(out == NONE){
+							printf("Erro de reconhecimento lexico na linha %d\n", linenum);
+							return;
+						}
+
 						bufferIndex += k;
 					}
 				}
@@ -319,28 +344,29 @@ void lexicalAnalizer(FILE *input, FILE *output){
 // Automato
 // =======================================================================================
 
-//Verifica se o character È um sÌmbolo
+//Verifica se o character √© um s√≠mbolo
 int issymbol(char c) {
 	return c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ';' || c == '.' || c == ',';
 }
 
-//Verifica se o caracter È um operador
+//Verifica se o caracter √© um operador
 int isop(char c) {
 	return c == '=' || c == '<' || c == '!' || c == '+' || c == '-' || c == '*' || c == '&';
 }
 
-// FunÁ„o o automato
+// Fun√ß√£o o automato
 int automata(char *str, int *index){
 	int hasUnderscore = 0;
 	int hasDot = 0;
 
-    //Verifica o primeiro caracter da palavra e muda para o estado correspondente, ou retorna NONE caso o caracter n„o seja reconhecido
+    //Verifica o primeiro caracter da palavra e muda para o estado correspondente, ou retorna NONE caso o caracter n√£o seja reconhecido
 	*index = 0;
 	if(str[*index] == '\0')	return NONE;
-	if(isalpha(str[*index]))	goto qid;   //Vai para o estado id caso o caracter seja alfabÈtico
-	if(isdigit(str[*index]))	goto qnum;  //Vai para o estado numeral caso o caracter seja um dÌgito
-	if(issymbol(str[*index]))	goto qsym;  //Vai para o estado sÌmbolo caso o caracter seja um sÌmbolo
+	if(isalpha(str[*index]))	goto qid;   //Vai para o estado id caso o caractere seja uma letra
+	if(isdigit(str[*index]))	goto qnum;  //Vai para o estado numeral caso o caracter seja um d√≠gito
+	if(issymbol(str[*index]))	goto qsym;  //Vai para o estado s√≠mbolo caso o caracter seja um s√≠mbolo
 	if(isop(str[*index]))		goto qop;   //Vai para o estado operador caso o caracter seja um operador
+    //printf("str: %c\n", str[*index]);
 	(*index)++;
 	return NONE;
 
@@ -348,20 +374,20 @@ int automata(char *str, int *index){
 qid:
     //Verifica se a palavra possui um ponto ou underscore para auxiliar o reconhecimento do token
     while(str[*index] != '\0' && (isalpha(str[*index]) || (isdigit(str[*index])) || str[*index] == '_' || str[*index] == '.')){
-        printf("str: %c\n", str[*index]);
+        //printf("str: %c\n", str[*index]);
 		if(str[*index] == '_')	hasUnderscore = 1;
-        //Caso um ponto seja reconhecido, guarda na vari·vel index, que foi passada por referÍncia, a posiÁ„o do ponto
+        //Caso um ponto seja reconhecido, guarda na vari√°vel index, que foi passada por refer√™ncia, a posi√ß√£o do ponto
 		else if(str[*index] == '.' && hasDot == 0)	hasDot = *index;
 		(*index)++;
 	}
 
-    //Caso n„o tenha underscore...
+    //Caso n√£o tenha underscore...
 	if(!hasUnderscore){
         //Caso tenha ponto e a palavra seja equivalente a palavra reservada PRINT, retorna PRINT
 		if(hasDot != 0 && strCmp(str, *index, reserved[13])) return RESERVED_PRINT;
 		else{
 			int i;
-            //Caso tenha ponto mas a palavra n„o for reconhecida como PRINT, guarda na vari·vel index, que foi passada por referÍncia, a posiÁ„o do ponto
+            //Caso tenha ponto mas a palavra n√£o for reconhecida como PRINT, guarda na vari√°vel index, que foi passada por refer√™ncia, a posi√ß√£o do ponto
 			if(hasDot != 0){
 				*index = hasDot;
 			}
@@ -384,7 +410,7 @@ qid:
 qnum:
 	while(str[*index] != '\0' && isdigit(str[*index]))	(*index)++;
 	return NUMBER;
-//Estado sÌmbolo
+//Estado s√≠mbolo
 qsym:
 	(*index)++;
 	switch (str[(*index) - 1]) {
@@ -429,7 +455,7 @@ qop:
 
 // Utilidades
 
-//MÈtodo de comparaÁ„o de Strings
+//Fun√ß√£o de compara√ß√£o de Strings
 int strCmp(const char *str1, int str1len, const char *str2){
 	int i;
 	for(i = 0; i < str1len || str2[i] != '\0'; i++){
@@ -439,7 +465,7 @@ int strCmp(const char *str1, int str1len, const char *str2){
 	return 1;
 }
 
-//MÈtodo que remove os espaÁos vazios de uma String
+//Fun√ß√£o que remove os espa√ßos vazios de uma String
 char* strtrim(char* s, int len){
 	int i = 0;
 	char *out = (char*) calloc (len + 1, sizeof(char));
@@ -449,4 +475,5 @@ char* strtrim(char* s, int len){
 	out[i] = '\0';
 	return out;
 }
+
 

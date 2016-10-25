@@ -158,8 +158,10 @@ void lexicalAnalizer(FILE *input, FILE *output){
 	int isCmt = 0;
 	int bufferIndex;
 	int i,j,k;
+	int linenum = 0;
 
 	while(fgets(line, MAX_STR_SIZE, input) != NULL){
+		linenum++;
 		i = 0;
 
 		// Elimina os espaços em branco antes do texto.
@@ -171,14 +173,26 @@ void lexicalAnalizer(FILE *input, FILE *output){
 				// pula os espaços em branco.
 				while(line[i] == ' ' || line[i] == '\t')	i++;
 
-				// Começo do tratamento da cadeia que será verificado no autômato.
+				// Começo do tratamento da cadeia que será verificado no automato.
 				j = 0;
 				while(line[i] != ' ' && line[i] != '\0' && line[i] != '\n'){
 
+					if(!isCmt && line[i] == '/' && line[i + 1] == '/'){
+						line[i] = '\0';
+						break;
+					}
+
 					// Verificação de comentário dentro de uma cadeia de caracteres
-					if(!isCmt && line[i] == '/' && line[i + 1] == '*')	isCmt = 1;
+					if(!isCmt && line[i] == '/' && line[i + 1] == '*'){
+						if(j > 0){
+							break;
+						}
+						else{
+							isCmt = 1;
+						}
+					}
 					if(isCmt){	// Se a cadeia estiver após o início de um comentário inline/multi-linha
-						if(line[i] == '*' && line[i + 1] == '/'){	// Verifica o final da cadeia de comentário
+						if(line[i] == '*' && line[i + 1] == '/'){	// Verifica o final da cadeia de coment?rio
 							isCmt = 0;
 							i += 2;
 						}
@@ -187,18 +201,26 @@ void lexicalAnalizer(FILE *input, FILE *output){
 					// Se não estiver dentro de um comentário, adicionar o caractere ao buffer
 					else 		buffer[j++] = line[i++];
 				}
-				if(!isCmt){
+				if(!isCmt && j > 0){
 					k = 0;
 					bufferIndex = 0;
 					buffer[j] = '\0';
 					while(buffer[bufferIndex] != '\0' && buffer[bufferIndex] != '\n'){
 						// Verificação de uma palavra.
 						int out = automata(buffer + bufferIndex, &k);
+
+
 						// Dado uma palavra que foi reconhecida, pegar o token correspondente.
 						char* str = getToken(out, buffer + bufferIndex, k);
 						// output
-						fprintf(stderr,"%s\n", str);
+						//fprintf(stderr,"%s\n", str);
 						fprintf(output,"%s\n", str);
+
+						if(out == NONE){
+							printf("Erro de reconhecimento lexico na linha %d\n", linenum);
+							return;
+						}
+
 						bufferIndex += k;
 					}
 				}
