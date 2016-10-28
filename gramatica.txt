@@ -1,0 +1,51 @@
+PROG   -> MAIN {CLASSE}
+MAIN   -> class ID '{' public static void main ( String [ ] ID ) '{' CMD '}' '}'
+CLASSE -> class ID [extends ID] '{' {VAR} {METODO} '}'
+VAR    -> TIPO ID ;
+METODO -> public TIPO ID '(' [PARAMS] ')' '{' {VAR} {CMD} return EXP ; '}'
+PARAMS -> TIPO ID {, TIPO ID}
+TIPO   -> int '[' ']'
+        | boolean
+        | int
+        | ID
+CMD    -> '{' {CMD} '}'
+        | if '(' EXP ')' CMD
+        | if '(' EXP ')' CMD else CMD
+        | while '(' EXP ')' CMD
+        | System.out.println '(' EXP ')' ;
+        | ID = EXP ;
+        | ID '[' EXP ']' = EXP ;
+EXP    -> EXP && REXP
+        | REXP
+REXP   -> REXP < AEXP
+        | REXP == AEXP
+        | REXP != AEXP
+        | AEXP
+AEXP   -> AEXP + MEXP
+        | AEXP - MEXP
+        | MEXP
+MEXP   -> MEXP * SEXP
+        | SEXP
+SEXP   -> ! SEXP
+        | - SEXP
+        | true
+        | false
+        | NUM
+        | new int '[' EXP ']'
+        | PEXP . length
+        | PEXP '[' EXP ']'
+        | PEXP
+PEXP   -> ID
+        | this
+        | new ID '(' ')'
+        | '(' EXP ')'
+        | PEXP . ID
+        | PEXP . ID '(' [EXPS] ')'
+EXPS   -> EXP {, EXP}
+LETRA  -> "A" | "B" | "C" | "D" | "E" | "F" | "G"
+        | "H" | "I" | "J" | "K" | "L" | "M" | "N"
+        | "O" | "P" | "Q" | "R" | "S" | "T" | "U"
+        | "V" | "W" | "X" | "Y" | "Z"
+DIGITO -> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+ID     -> LETRA { LETRA | DIGITO | "_" }
+NUM    -> DIGITO { DIGITO }

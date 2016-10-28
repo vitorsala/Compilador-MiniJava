@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <curses.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_ID_QT 255           //Tamanho máximo de um ID
 #define MAX_STR_SIZE 255        //Tamanho máximo de uma String
@@ -41,7 +41,6 @@ const char* reserved[] = {
 
 //Representa os tokens reconhecíveis
 typedef enum {
-    NONE,             //None
     ERROR,            //Error
     ID,               //ID
     NUMBER,           //Number
@@ -88,7 +87,6 @@ typedef enum {
 
 //Vetor para mapear o número do enum com a String adequada (e.g., recognizedStates[ID] = "<ID>")
 char *recognizedStates[] = {
-    "<NONE>",
     "<ERROR>",
     "<ID>",
     "<NUMBER>",
@@ -134,7 +132,6 @@ char *recognizedStates[] = {
 
 //Representa as produções (regras) da gramática
 typedef enum {
-    EMPTY,
     LEAF,
     PROG,
     MAIN,
@@ -158,7 +155,6 @@ typedef enum {
 } NodeType;
 
 char *nodeTypes[] = {
-    "EMPTY",
     "LEAF",
     "PROG",
     "MAIN",
@@ -241,7 +237,7 @@ int main(int argc, char* argv[]){
 
 	lexicalAnalizer(input, output);
 
-	fprintf(stderr,"Analise lexica finalizada");
+	fprintf(stderr,"Analise lexica finalizada com sucesso");
 	getchar();
     
     fclose(input);
@@ -256,7 +252,7 @@ int main(int argc, char* argv[]){
     
     parser(input, output);
     
-    fprintf(stderr,"Analise sintatica finalizada");
+    fprintf(stderr,"Analise sintatica finalizada com sucesso");
     getchar();
     
     fclose(input);
@@ -368,7 +364,7 @@ void lexicalAnalizer(FILE *input, FILE *output){
 						// Dado uma palavra que foi reconhecida, pegar o token correspondente.
 						char* str = getToken(out, buffer + bufferIndex, k);
 						// output
-						fprintf(stderr,"%s\n", str);
+//						fprintf(stderr,"%s\n", str);
 						fprintf(output,"%s\n", str);
 
 						if(out == ERROR){
@@ -437,7 +433,7 @@ qid:
 			}
             //
 			for(i = 0; i < 20; i++){
-				if(strCmp(str, *index, reserved[i]))	return i+4;
+				if(strCmp(str, *index, reserved[i]))	return i+3;
 			}
 		}
 		return ID;
@@ -491,7 +487,7 @@ qop:
 			return OP_DIFFERENT;
 		}
 	case '&':
-		if(str[*index] != '&')	return OP_AND;
+		if(str[*index] == '&')	return OP_AND;
 	}
 	return ERROR;
 
@@ -568,6 +564,20 @@ void parser(FILE *input, FILE *output){
 // Árvore Sintática
 // =======================================================================================
 
+//Exibe a árvore sintática
+void printParseTree(FILE *output, Node *root, int level) {
+    if (root->nodeType == LEAF)
+        fprintf(output, "%*s" "%s\n", level * 4, "", recognizedStates[root->token]);
+    else {
+        fprintf(output, "%*s" "%s\n", level * 4, "", nodeTypes[root->nodeType]);
+        level++;
+        for (int i = 0; root->childNodes[i] != NULL; i++)
+            printParseTree(output, root->childNodes[i], level);
+    }
+    
+    free(root); //WARNING: O que acontece com a memória ocupada quando o programa dá erro?
+}
+
 //Retorna um nó vazio do tipo especificado
 Node *getNode(NodeType nodeType) {
     Node *node = malloc(sizeof(Node));
@@ -588,373 +598,432 @@ Node *getLeaf(RecognizedState token) {
     return node;
 }
 
-void printParseTree(FILE *output, Node *root, int level) {
-    if (root->token != 0)
-        fprintf(output, "%*s" "%s\n", level * 4, "", recognizedStates[root->token]);
-    else {
-        fprintf(output, "%*s" "%s\n", level * 4, "", nodeTypes[root->nodeType]);
-        level++;
-        for (int i = 0; root->childNodes[i] != NULL; i++)
-            printParseTree(output, root->childNodes[i], level);
-    }
-    free(root);
+void parseError(char *expected, int linenum, char *found) {
+    printf("Esperado token %s na linha %d, encontrado token %s\n", expected, linenum, found);
+    exit(-1);
+}
+
+//WARNING: Implementar lookahead?
+Node *parse(int expected, bool isSyntaxError) {
+    Node *node = NULL;
+    if (tokenTag->recognizedState == expected) {
+        node = getLeaf(expected);
+        tokenTag = tokenTag->next;
+    } else if (isSyntaxError)
+        parseError(recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    return node;
 }
 
 Node *pProg() {
     Node *node = getNode(PROG);
-    node->childNodes[0] = pMain();
     
+    node->childNodes[0] = pMain();
     node->childNodes[1] = pClasse();
-
+    
     return node;
 }
 
 Node *pMain() {
     Node *node = getNode(MAIN);
+    int childCount = 0;
     
-    int expected = RESERVED_CLASS;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[0] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = ID;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[1] = getLeaf(ID);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_OCB;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[2] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = RESERVED_PUBLIC;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[3] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = RESERVED_STATIC;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[4] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = RESERVED_VOID;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[5] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = RESERVED_MAIN;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[6] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_OP;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[7] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = RESERVED_STRING;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[8] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_OB;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[9] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    node->childNodes[childCount++] = parse(RESERVED_CLASS, true);
+    node->childNodes[childCount++] = parse(ID, true);
+    node->childNodes[childCount++] = parse(SYMBOL_OCB, true);
+    node->childNodes[childCount++] = parse(RESERVED_PUBLIC, true);
+    node->childNodes[childCount++] = parse(RESERVED_STATIC, true);
+    node->childNodes[childCount++] = parse(RESERVED_VOID, true);
+    node->childNodes[childCount++] = parse(RESERVED_MAIN, true);
+    node->childNodes[childCount++] = parse(SYMBOL_OP, true);
+    node->childNodes[childCount++] = parse(RESERVED_STRING, true);
+    node->childNodes[childCount++] = parse(SYMBOL_OB, true);
+    node->childNodes[childCount++] = parse(SYMBOL_CB, true);
+    node->childNodes[childCount++] = parse(ID, true);
+    node->childNodes[childCount++] = parse(SYMBOL_CP, true);
+    node->childNodes[childCount++] = parse(SYMBOL_OCB, true);
     
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_CB;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[10] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    if ((node->childNodes[childCount++] = pCmd()) == NULL)
+        childCount--;
     
-    tokenTag = tokenTag->next;
-    expected = ID;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[11] = getLeaf(ID);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    node->childNodes[childCount++] = parse(SYMBOL_CCB, true);
+    node->childNodes[childCount++] = parse(SYMBOL_CCB, true);
     
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_CP;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[12] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-    
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_OCB;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[13] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-    
-    tokenTag = tokenTag->next;
-    node->childNodes[14] = pCmd();
-    
-    expected = SYMBOL_CCB;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[15] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-    
-    tokenTag = tokenTag->next;
-    expected = SYMBOL_CCB;
-    if (tokenTag->recognizedState == expected)
-        node->childNodes[16] = getLeaf(expected);
-    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-    
-    tokenTag = tokenTag->next;
     return node;
 }
 
 Node *pClasse() {
-    if (tokenTag->recognizedState == NONE)
+    if (tokenTag->next == NULL)
         return NULL;
     
-//    Node *node = getNode(CLASSE);
-//    int childCount = -1;
-//    
-//    int expected = RESERVED_CLASS;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    expected = ID;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(ID);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    expected = RESERVED_EXTENDS;
-//    if (tokenTag->recognizedState == expected) {
-//        node->childNodes[childCount++] = getLeaf(expected);
-//        
-//        tokenTag = tokenTag->next;
-//        expected = ID;
-//        if (tokenTag->recognizedState == expected)
-//            node->childNodes[childCount++] = getLeaf(ID);
-//        else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    } else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    expected = SYMBOL_OCB;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    //WARNING: Problema de produção gramatical
-//    tokenTag = tokenTag->next;
-//    node->childNodes[childCount++] = pVar();
-//    
-//    //WARNING: Problema de produção gramatical
-//    node->childNodes[childCount++] = pMetodo();
-//    
-//    expected = SYMBOL_CCB;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    expected = SYMBOL_CCB;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    if (tokenTag != NULL)
-//        node->childNodes[childCount++] = pClasse();
+    Node *node = getNode(CLASSE);
+    int childCount = 0;
     
-    Node *node = getNode(EMPTY);
+    node->childNodes[childCount++] = parse(RESERVED_CLASS, true);
+    node->childNodes[childCount++] = parse(ID, true);
+    
+    if ((node->childNodes[childCount++] = parse(RESERVED_EXTENDS, false)) != NULL) {
+        node->childNodes[childCount++] = parse(ID, true);
+    } else childCount--;
+    
+    node->childNodes[childCount++] = parse(SYMBOL_OCB, true);
+    
+    if ((node->childNodes[childCount++] = pVar()) == NULL)
+        childCount--;
+    
+    if ((node->childNodes[childCount++] = pMetodo()) == NULL)
+        childCount--;
+    
+    node->childNodes[childCount++] = parse(SYMBOL_CCB, true);
+    node->childNodes[childCount++] = pClasse();
     
     return node;
 }
 
 Node *pVar() {
-//    Node *node = getNode(VAR);
-//    
-//    node->childNodes[0] = pTipo();
-//    
-//    node->childNodes[1] = getLeaf(ID);
-//    
-//    tokenTag = tokenTag->next;
-//    int expected = SYMBOL_SEMICOLON;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[2] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
+    Node *node = getNode(VAR);
     
-    //WARNING: O que fazer em caso de múltiplos VAR?
+    if ((node->childNodes[0] = pTipo()) == NULL)
+        return NULL;
     
-    Node *node = getNode(EMPTY);
+    node->childNodes[1] = parse(ID, true); //WARNING: Retornava NULL por alguma razão
+    node->childNodes[2] = parse(SYMBOL_SEMICOLON, true);
+    node->childNodes[3] = pVar();
     
     return node;
 }
 
 Node *pMetodo() {
-//    Node *node = getNode(METODO);
-//    int childCount = -1;
-//    
-//    int expected = RESERVED_PUBLIC;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    node->childNodes[childCount++] = pTipo();
-//    
-//    node->childNodes[childCount++] = pId();
-//    
-//    int expected = SYMBOL_OP;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    node->childNodes[childCount++] = pParams();
-//    
-//    int expected = SYMBOL_CP;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    int expected = SYMBOL_OCB;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    node->childNodes[childCount++] = pVar();
-//    
-//    tokenTag = tokenTag->next;
-//    node->childNodes[childCount++] = pCmd();
-//    
-//    int expected = RESERVED_RETURN;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    node->childNodes[childCount++] = pExp();
-//    
-//    tokenTag = tokenTag->next;
-//    int expected = SYMBOL_SEMICOLON;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
-//    int expected = SYMBOL_CCB;
-//    if (tokenTag->recognizedState == expected)
-//        node->childNodes[childCount++] = getLeaf(expected);
-//    else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
-//    
-//    tokenTag = tokenTag->next;
+    Node *node = getNode(METODO);
+    int childCount = 0;
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[childCount++] = parse(RESERVED_PUBLIC, false)) == NULL)
+        return NULL;
+    
+    if ((node->childNodes[childCount++] = pTipo()) == NULL)
+        parseError("do tipo TIPO", tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    
+    node->childNodes[childCount++] = parse(ID, true);
+    node->childNodes[childCount++] = parse(SYMBOL_OP, true);
+    
+    if ((node->childNodes[childCount++] = pParams()) == NULL)
+        childCount--;
+    
+    node->childNodes[childCount++] = parse(SYMBOL_CP, true);
+    node->childNodes[childCount++] = parse(SYMBOL_OCB, true);
+    
+    if ((node->childNodes[childCount++] = pVar()) == NULL)
+        childCount--;
+    
+    if ((node->childNodes[childCount++] = pCmd()) == NULL)
+        childCount--;
+    
+    node->childNodes[childCount++] = parse(RESERVED_RETURN, true);
+    
+    node->childNodes[childCount++] = pExp();
+    
+    node->childNodes[childCount++] = parse(SYMBOL_SEMICOLON, true);
+    node->childNodes[childCount++] = parse(SYMBOL_CCB, true);
     
     return node;
 }
 
 Node *pParams() {
-//    Node *node = getNode(PARAMS);
-//    
-//    node->childNodes[0] = pTipo();
-//    
-//    node->childNodes[1] = getLeaf(ID);
+    Node *node = getNode(PARAMS);
     
-    //WARNING: O que fazer em caso de múltiplos PARAMS?
+    if ((node->childNodes[0] = pTipo()) == NULL)
+        return NULL;
     
-//    tokenTag = tokenTag->next;
-//    int expected = SYMBOL_COMMA;
-//    if (tokenTag->recognizedState == expected) {
-//        node->childNodes[2] = getLeaf(expected);
-//        
-//        tokenTag = tokenTag->next;
-//        node->childNodes[3] = pParams();
-//    } else printf("Esperado token %s na linha %d, encontrado token %s\n", recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    node->childNodes[1] = parse(ID, true);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[2] = parse(SYMBOL_COMMA, false)) != NULL)
+        node->childNodes[3] = pParams();
     
     return node;
 }
 
 Node *pTipo() {
-//    Node *node = getNode(TIPO);
+    Node *node = getNode(TIPO);
     
-    Node *node = getNode(EMPTY);
+    switch (tokenTag->recognizedState) {
+        case ID:
+            node->childNodes[0] = getLeaf(ID);
+            break;
+        case RESERVED_BOOLEAN:
+            node->childNodes[0] = getLeaf(RESERVED_BOOLEAN);
+            break;
+        case RESERVED_INT:
+            node->childNodes[0] = getLeaf(RESERVED_INT);
+            tokenTag = tokenTag->next;
+            
+            if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL)
+                node->childNodes[2] = parse(SYMBOL_CB, true);
+            
+            return node;    //Return antecipado para evitar avançar tokenTag duas vezes
+        default:
+            return NULL;
+    }
+    
+    tokenTag = tokenTag->next;
     
     return node;
 }
 
 Node *pCmd() {
-//    Node *node = getNode(CMD);
+    Node *node = getNode(CMD);
     
-    Node *node = getNode(EMPTY);
+    switch (tokenTag->recognizedState) {
+        case SYMBOL_OCB: {
+            int childCount = 0;
+            
+            node->childNodes[childCount++] = getLeaf(SYMBOL_OCB);
+            tokenTag = tokenTag->next;
+            
+            if ((node->childNodes[childCount++] = pCmd()) == NULL)
+                childCount--;
+            
+            node->childNodes[childCount++] = parse(SYMBOL_CCB, true);
+            break;
+        }
+        case RESERVED_IF:
+            node->childNodes[0] = getLeaf(RESERVED_IF);
+            tokenTag = tokenTag->next;
+            node->childNodes[1] = parse(SYMBOL_OP, true);
+            node->childNodes[2] = pExp();
+            node->childNodes[3] = parse(SYMBOL_CP, true);
+            node->childNodes[4] = pCmd();
+            
+            if ((node->childNodes[5] = parse(RESERVED_ELSE, false)) != NULL)
+                node->childNodes[6] = pCmd();
+            
+            break;
+        case RESERVED_WHILE:
+            node->childNodes[0] = getLeaf(RESERVED_WHILE);
+            tokenTag = tokenTag->next;
+            node->childNodes[1] = parse(SYMBOL_OP, true);
+            node->childNodes[2] = pExp();
+            node->childNodes[3] = parse(SYMBOL_CP, true);
+            node->childNodes[4] = pCmd();
+            break;
+        case RESERVED_PRINT:
+            node->childNodes[0] = getLeaf(RESERVED_PRINT);
+            tokenTag = tokenTag->next;
+            node->childNodes[1] = parse(SYMBOL_OP, true);
+            node->childNodes[2] = pExp();
+            node->childNodes[3] = parse(SYMBOL_CP, true);
+            node->childNodes[4] = parse(SYMBOL_SEMICOLON, true);
+            break;
+        case ID:
+            node->childNodes[0] = getLeaf(ID);
+            tokenTag = tokenTag->next;
+            
+            if ((node->childNodes[1] = parse(OP_EQUAL, false)) != NULL) {
+                node->childNodes[2] = pExp();
+                node->childNodes[3] = parse(SYMBOL_SEMICOLON, true);
+            } else if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL) {
+                node->childNodes[2] = pExp();
+                node->childNodes[3] = parse(SYMBOL_CB, true);
+                node->childNodes[4] = parse(OP_EQUAL, true);
+                node->childNodes[5] = pExp();
+                node->childNodes[6] = parse(SYMBOL_SEMICOLON, true);
+            } else parseError("= ou [", tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+            break;
+        default:
+            return NULL;
+    }
     
     return node;
 }
 
 Node *pExp() {
-//    Node *node = getNode(EXP);
+    Node *node = getNode(EXP);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[0] = pRexp()) == NULL)
+        parseError("do tipo EXP", tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
+    
+    if ((node->childNodes[1] = parse(OP_AND, false)) != NULL)
+        node->childNodes[2] = pExp();
     
     return node;
 }
 
 Node *pRexp() {
-//    Node *node = getNode(REXP);
+    Node *node = getNode(REXP);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[0] = pAexp()) == NULL)
+        return NULL;
+    
+    if ((node->childNodes[1] = parse(OP_MINOR, false)) != NULL ||
+        (node->childNodes[1] = parse(OP_DOUBLEEQUALS, false)) != NULL ||
+        (node->childNodes[1] = parse(OP_DIFFERENT, false)) != NULL)
+        node->childNodes[2] = pRexp();
     
     return node;
 }
 
 Node *pAexp() {
-//    Node *node = getNode(AEXP);
+    Node *node = getNode(AEXP);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[0] = pMexp()) == NULL)
+        return NULL;
+    
+    if ((node->childNodes[1] = parse(OP_PLUS, false)) != NULL ||
+        (node->childNodes[1] = parse(OP_MINUS, false)) != NULL)
+        node->childNodes[2] = pAexp();
     
     return node;
 }
 
 Node *pMexp() {
-//    Node *node = getNode(MEXP);
+    Node *node = getNode(MEXP);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[0] = pSexp()) == NULL)
+        return NULL;
+    
+    if ((node->childNodes[1] = parse(OP_MULT, false)) != NULL)
+        node->childNodes[2] = pMexp();
     
     return node;
 }
 
 Node *pSexp() {
-//    Node *node = getNode(SEXP);
+    Node *node = getNode(SEXP);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[0] = pPexp()) == NULL)
+        return NULL;
+    
+    if ((node->childNodes[1] = parse(SYMBOL_DOT, false)) != NULL)
+        node->childNodes[2] = parse(RESERVED_LENGTH, true);
+    else if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL) {
+        node->childNodes[2] = pExp();
+        node->childNodes[3] = parse(SYMBOL_CB, true);
+    }
+    
+    switch (tokenTag->recognizedState) {
+        case RESERVED_TRUE:
+            node->childNodes[0] = getLeaf(RESERVED_TRUE);
+            tokenTag = tokenTag->next;
+            break;
+        case RESERVED_FALSE:
+            node->childNodes[0] = getLeaf(RESERVED_FALSE);
+            tokenTag = tokenTag->next;
+            break;
+        case NUMBER:
+            node->childNodes[0] = getLeaf(NUMBER);
+            tokenTag = tokenTag->next;
+            break;
+        case RESERVED_NEW: {
+//            //WARNING: Lookahead
+//            TokenTag *curr = tokenTag;
+//            tokenTag = tokenTag->next;
+//            
+//            if ((parse(ID, false)) != NULL) {
+//                tokenTag = curr;
+//                goto new_id;
+//            }
+//            
+//            tokenTag = curr;
+            node->childNodes[0] = getLeaf(RESERVED_NEW);
+            tokenTag = tokenTag->next;
+            node->childNodes[1] = parse(RESERVED_INT, true);
+            node->childNodes[2] = parse(SYMBOL_OB, true);
+            node->childNodes[3] = pExp();
+            node->childNodes[4] = parse(SYMBOL_CB, true);
+            break;
+        }
+        new_id:
+        default:
+            if ((node->childNodes[0] = parse(OP_DIFFERENT, false)) != NULL ||
+                (node->childNodes[0] = parse(OP_MINUS, false)) != NULL)
+                node->childNodes[1] = pSexp();
+            else {
+//                if ((node->childNodes[0] = pPexp()) == NULL)
+//                    return NULL;
+//                
+//                if ((node->childNodes[1] = parse(SYMBOL_DOT, false)) != NULL)
+//                    node->childNodes[2] = parse(RESERVED_LENGTH, true);
+//                else if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL) {
+//                    node->childNodes[2] = pExp();
+//                    node->childNodes[3] = parse(SYMBOL_CB, true);
+//                }
+            }
+            
+            break;
+    }
     
     return node;
 }
 
 Node *pPexp() {
-//    Node *node = getNode(PEXP);
+    Node *node = getNode(PEXP);
     
-    Node *node = getNode(EMPTY);
+    switch (tokenTag->recognizedState) {
+        case ID:
+            node->childNodes[0] = getLeaf(ID);
+            tokenTag = tokenTag->next;
+            break;
+        case RESERVED_THIS:
+            node->childNodes[0] = getLeaf(RESERVED_THIS);
+            tokenTag = tokenTag->next;
+            break;
+        case RESERVED_NEW:
+            node->childNodes[0] = getLeaf(RESERVED_NEW);
+            tokenTag = tokenTag->next;
+            node->childNodes[1] = parse(ID, true);
+            node->childNodes[2] = parse(SYMBOL_OP, true);
+            node->childNodes[3] = parse(SYMBOL_CP, true);
+            break;
+        case SYMBOL_OP:
+            node->childNodes[0] = getLeaf(SYMBOL_OP);
+            tokenTag = tokenTag->next;
+            node->childNodes[1] = pExp();
+            node->childNodes[2] = parse(SYMBOL_CP, true);
+            break;
+        default: {
+//            //WARNING: Lookahead
+//            TokenTag *curr = tokenTag;
+//            tokenTag = tokenTag->next;
+//            
+//            if (parse(SYMBOL_DOT, false) == NULL) {
+//                tokenTag = curr;
+//                return NULL;
+//            }
+//            
+//            tokenTag = curr;
+//            node->childNodes[0] = pPexp();
+//            node->childNodes[1] = parse(SYMBOL_DOT, true);
+//            node->childNodes[2] = parse(ID, true);
+//            
+//            if ((node->childNodes[3] = parse(SYMBOL_OP, true)) != NULL) {
+//                node->childNodes[4] = pExps();
+//                node->childNodes[5] = parse(SYMBOL_CP, true);
+//            }
+            
+            break;
+        }
+    }
+    
+    if (parse(SYMBOL_DOT, false) != NULL) {
+        node->childNodes[0] = pPexp();
+        node->childNodes[1] = parse(SYMBOL_DOT, true);
+        node->childNodes[2] = parse(ID, true);
+        
+        if ((node->childNodes[3] = parse(SYMBOL_OP, true)) != NULL) {
+            node->childNodes[4] = pExps();
+            node->childNodes[5] = parse(SYMBOL_CP, true);
+        }
+    }
     
     return node;
 }
 
 Node *pExps() {
-//    Node *node = getNode(EXPS);
+    Node *node = getNode(EXPS);
     
-    Node *node = getNode(EMPTY);
+    if ((node->childNodes[0] = pExp()) == NULL)
+        return NULL;
+    
+    if ((node->childNodes[2] = parse(SYMBOL_COMMA, false)) != NULL)
+        node->childNodes[3] = pExp();
     
     return node;
 }
