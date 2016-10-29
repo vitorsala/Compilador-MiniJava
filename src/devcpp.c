@@ -11,9 +11,9 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define MAX_ID_QT 255           //Tamanho máximo de um ID
-#define MAX_STR_SIZE 255        //Tamanho máximo de uma String
-#define MAX_CHILD_NODES_QT 17 //17 nós filhos, quantidade determinada pelo maior número de tokens em uma produção (Nesse caso 17 tokens de MAIN)
+#define MAX_ID_QT 255           //Tamanho maximo de um ID
+#define MAX_STR_SIZE 255        //Tamanho maximo de uma String
+#define MAX_CHILD_NODES_QT 17 //17 nos filhos, quantidade determinada pelo maior numero de tokens em uma producao (Nesse caso 17 tokens de MAIN)
 
 // Lista de palavras reservadas.
 const char* reserved[] = {
@@ -39,7 +39,7 @@ const char* reserved[] = {
     "null"
 };
 
-//Representa os tokens reconhecíveis
+//Representa os tokens reconheciveis
 typedef enum {
     ERROR,            //Error
     ID,               //ID
@@ -82,10 +82,10 @@ typedef enum {
     OP_MULT,          //*
     OP_AND,           //&&
     OP_NOT,            //!
-    NUMBEROFSTATES    //Número total de estados
+    NUMBEROFSTATES    //Numero total de estados
 } RecognizedState;
 
-//Vetor para mapear o número do enum com a String adequada (e.g., recognizedStates[ID] = "ID>")
+//Vetor para mapear o numero do enum com a String adequada (e.g., recognizedStates[ID] = "ID>")
 char *recognizedStates[] = {
     "ERROR",
     "ID",
@@ -130,7 +130,7 @@ char *recognizedStates[] = {
     "OP_NOT"
 };
 
-//Representa as produções (regras) da gramática
+//Representa as producoes (regras) da gramatica
 typedef enum {
     LEAF,
     PROG,
@@ -150,7 +150,7 @@ typedef enum {
     EXPS,
     LETRA,
     DIGITO,
-    NT_ID,  //Node Type ID (Já existe o enumerador ID)
+    NT_ID,  //Node Type ID (Ja existe o enumerador ID)
     NUM
 } NodeType;
 
@@ -177,20 +177,19 @@ char *nodeTypes[] = {
     "NUM"
 };
 
-//Estrutura que representa os tokens lidos da lista produzida pela análise léxica
+//Estrutura que representa os tokens lidos da lista produzida pela analise lexica
 typedef struct TokenTag {
     RecognizedState recognizedState; //Tipo do token
     char value[MAX_STR_SIZE]; //Valor do token em caso de ID ou NUMBER
-    int linenum; //Número da linha do token lido
-    struct TokenTag *next; //Estrutura de lista ligada para a análise sintática
+    int linenum; //Numero da linha do token lido
+    struct TokenTag *next; //Estrutura de lista ligada para a analise sintatica
 } TokenTag;
 
-//Estrutura de nó para a árvore sintática
+//Estrutura de no para a arvore sintatica
 typedef struct Node {
-    NodeType nodeType; //Tipo do nó
-//    TokenTag *tokens; //Lista ligada de tokens deste nó (Desnecessário?)
-    struct Node *childNodes[MAX_CHILD_NODES_QT]; //Nós filhos deste nó
-    RecognizedState token; //Caso o nó seja uma folha, guarda apenas o tipo de token
+    NodeType nodeType; //Tipo do no
+    struct Node *childNodes[MAX_CHILD_NODES_QT]; //Nos filhos deste no
+    RecognizedState token; //Caso o no seja uma folha, guarda apenas o tipo de token
 } Node;
 
 void lexicalAnalizer(FILE *input, FILE *output);
@@ -261,10 +260,10 @@ int main(int argc, char* argv[]){
 
 
 // =======================================================================================
-// Analisador Léxico
+// Analisador Lexico
 // =======================================================================================
 
-//Retorna um token com base no id encontrado pelo autômato
+//Retorna um token com base no id encontrado pelo automato
 char* getToken(int id, char* word, int len){
 	int i;
 	char* attr;
@@ -272,12 +271,12 @@ char* getToken(int id, char* word, int len){
         attr = (char*) calloc (len + 5, sizeof(char));
         char* trimmed = rmtrail(word, len);
 
-		// No caso do ID, é necessário verificar se o ID ja foi utilizado anteriormente
-		// para a recuperação do atributo do token.
+		// No caso do ID, e necessario verificar se o ID ja foi utilizado anteriormente
+		// para a recuperacao do atributo do token.
 		i = 0;
 		while(ids[i] != NULL){
-			// Para cada ID já declarado anteriormente, verificar se o ID atual corresponde
-			// a algum dos já declarados
+			// Para cada ID ja declarado anteriormente, verificar se o ID atual corresponde
+			// a algum dos ja declarados
 			if(strCmp(trimmed, len, ids[i])){
 				sprintf(attr,"ID,%d",i);
 				return attr;
@@ -289,7 +288,7 @@ char* getToken(int id, char* word, int len){
 		return attr;
 	}
 	else if(id == NUMBER){
-		// Pequeno tratamento de string para adicionar o valor do dígito ao atributo.
+		// Pequeno tratamento de string para adicionar o valor do digito ao atributo.
         attr = (char*) calloc (len + 9, sizeof(char));
         sprintf(attr, "NUMBER,%s", rmtrail(word, len));
 		return attr;
@@ -300,7 +299,7 @@ char* getToken(int id, char* word, int len){
 	return recognizedStates[ERROR];
 }
 
-// Função do analisador léxico
+// Funcao do analisador lexico
 void lexicalAnalizer(FILE *input, FILE *output){
 	char line[MAX_STR_SIZE];
 	char buffer[MAX_STR_SIZE];
@@ -313,16 +312,16 @@ void lexicalAnalizer(FILE *input, FILE *output){
 		linenum++;
 		i = 0;
 
-		// Elimina os espaços em branco antes do texto.
+		// Elimina os espacos em branco antes do texto.
 		while(line[i] == ' ' || line[i] == '\t')	i++;
 
-		// Verificação se não é um comentário de linha
+		// Verificacao se nao e um comentario de linha
 		if(!(line[i] == '/' && line[i + 1] == '/')){
 			while(line[i] != '\0' && line[i] != '\n'){
-				// pula os espaços em branco.
+				// pula os espacos em branco.
 				while(line[i] == ' ' || line[i] == '\t')	i++;
 
-				// Começo do tratamento da cadeia que será verificado no automato.
+				// Comeco do tratamento da cadeia que sera verificado no automato.
 				j = 0;
 				while(line[i] != ' ' && line[i] != '\0' && line[i] != '\n'){
 
@@ -331,7 +330,7 @@ void lexicalAnalizer(FILE *input, FILE *output){
 						break;
 					}
 
-					// Verificação de comentário dentro de uma cadeia de caracteres
+					// Verificacao de comentario dentro de uma cadeia de caracteres
 					if(!isCmt && line[i] == '/' && line[i + 1] == '*'){
 						if(j > 0){
 							break;
@@ -340,14 +339,14 @@ void lexicalAnalizer(FILE *input, FILE *output){
 							isCmt = 1;
 						}
 					}
-					if(isCmt){	// Se a cadeia estiver após o início de um comentário inline/multi-linha
-						if(line[i] == '*' && line[i + 1] == '/'){	// Verifica o final da cadeia de coment?rio
+					if(isCmt){	// Se a cadeia estiver apos o inicio de um comentario inline/multi-linha
+						if(line[i] == '*' && line[i + 1] == '/'){	// Verifica o final da cadeia de comentario
 							isCmt = 0;
 							i += 2;
 						}
 						else	i++;
 					}
-					// Se não estiver dentro de um comentário, adicionar o caractere ao buffer
+					// Se nao estiver dentro de um comentario, adicionar o caractere ao buffer
 					else 		buffer[j++] = line[i++];
 				}
 				if(!isCmt && j > 0){
@@ -355,7 +354,7 @@ void lexicalAnalizer(FILE *input, FILE *output){
 					bufferIndex = 0;
 					buffer[j] = '\0';
 					while(buffer[bufferIndex] != '\0' && buffer[bufferIndex] != '\n'){
-						// Verificação de uma palavra.
+						// Verificacao de uma palavra.
 						int out = automata(buffer + bufferIndex, &k);
 
 
@@ -382,27 +381,27 @@ void lexicalAnalizer(FILE *input, FILE *output){
 // Automato
 // =======================================================================================
 
-//Verifica se o character é um símbolo
+//Verifica se o character e um simbolo
 int issymbol(char c) {
 	return c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ';' || c == '.' || c == ',';
 }
 
-//Verifica se o caracter é um operador
+//Verifica se o caracter e um operador
 int isop(char c) {
 	return c == '=' || c == '<' || c == '!' || c == '+' || c == '-' || c == '*' || c == '&';
 }
 
-// Função o automato
+// Funcao o automato
 int automata(char *str, int *index){
 	int hasUnderscore = 0;
 	int hasDot = 0;
 
-    //Verifica o primeiro caracter da palavra e muda para o estado correspondente, ou retorna ERROR caso o caracter não seja reconhecido
+    //Verifica o primeiro caracter da palavra e muda para o estado correspondente, ou retorna ERROR caso o caracter nao seja reconhecido
 	*index = 0;
 	if(str[*index] == '\0')	return ERROR;
 	if(isalpha(str[*index]))	goto qid;   //Vai para o estado id caso o caractere seja uma letra
-	if(isdigit(str[*index]))	goto qnum;  //Vai para o estado numeral caso o caracter seja um dígito
-	if(issymbol(str[*index]))	goto qsym;  //Vai para o estado símbolo caso o caracter seja um símbolo
+	if(isdigit(str[*index]))	goto qnum;  //Vai para o estado numeral caso o caracter seja um digito
+	if(issymbol(str[*index]))	goto qsym;  //Vai para o estado simbolo caso o caracter seja um simbolo
 	if(isop(str[*index]))		goto qop;   //Vai para o estado operador caso o caracter seja um operador
     //printf("str: %c\n", str[*index]);
 	(*index)++;
@@ -414,18 +413,18 @@ qid:
     while(str[*index] != '\0' && (isalpha(str[*index]) || (isdigit(str[*index])) || str[*index] == '_' || str[*index] == '.')){
         //printf("str: %c\n", str[*index]);
 		if(str[*index] == '_')	hasUnderscore = 1;
-        //Caso um ponto seja reconhecido, guarda na variável index, que foi passada por referência, a posição do ponto
+        //Caso um ponto seja reconhecido, guarda na variavel index, que foi passada por referencia, a posicao do ponto
 		else if(str[*index] == '.' && hasDot == 0)	hasDot = *index;
 		(*index)++;
 	}
 
-    //Caso não tenha underscore...
+    //Caso nao tenha underscore...
 	if(!hasUnderscore){
         //Caso tenha ponto e a palavra seja equivalente a palavra reservada PRINT, retorna PRINT
 		if(hasDot != 0 && strCmp(str, *index, reserved[13])) return RESERVED_PRINT;
 		else{
 			int i;
-            //Caso tenha ponto mas a palavra não for reconhecida como PRINT, guarda na variável index, que foi passada por referência, a posição do ponto
+            //Caso tenha ponto mas a palavra nao for reconhecida como PRINT, guarda na variavel index, que foi passada por referencia, a posicao do ponto
 			if(hasDot != 0){
 				*index = hasDot;
 			}
@@ -448,7 +447,7 @@ qid:
 qnum:
 	while(str[*index] != '\0' && isdigit(str[*index]))	(*index)++;
 	return NUMBER;
-//Estado símbolo
+//Estado simbolo
 qsym:
 	(*index)++;
 	switch (str[(*index) - 1]) {
@@ -492,12 +491,12 @@ qop:
 }
 
 // =======================================================================================
-// Analisador Sintático
+// Analisador Sintatico
 // =======================================================================================
 
-//Retorna um enum de token com base na String lida (e.g., "<ID>" retorna 1)
+//Retorna um enum de token com base na String lida (e.g., "ID" retorna 1)
 RecognizedState getRecognizedState(char *token) {
-    //WARNING: i = 1 pula o token <Error>
+    //i = 1 pula o token Error (Que tem enum 0)
     for (int i = 1; i < NUMBEROFSTATES; i++) {
         if (strcmp(recognizedStates[i], token) == 0)
             return i;
@@ -505,46 +504,50 @@ RecognizedState getRecognizedState(char *token) {
     return ERROR;
 }
 
-//Função do analisador sintático
-void parser(FILE *input, FILE *output){
+//Preenche a lista ligada de tokens com base na lista de tokens
+void readTokenList(FILE *input) {
     char line[MAX_STR_SIZE];
     int linenum = 0;
-    tokenTag = malloc(sizeof(TokenTag));  //Token Tag guarda as informações do token lido
-    TokenTag *head = tokenTag;  //Ponteiro que aponta para o primeiro token lido
     
     while(fgets(line, MAX_STR_SIZE, input) != NULL){
         linenum++;
-        tokenTag->linenum = linenum;
+        tokenTag->linenum = linenum;    //Guarda a linha do token lido
         
-        char *token = strtrim(line); //Remove os espaços vazios e cria um ponteiro que aponta para o token lido (Necessário para o método strsep)
+        char *token = strtrim(line); //Remove os espacos vazios e cria um ponteiro que aponta para o token lido (Necessario para o metodo strsep)
         
-//        //O bloco abaixo remove os sinais de '<' e '>' do token
+        //O bloco abaixo remove os sinais de '<' e '>' do token
         int toklen = strlen(token); //Tamanho do token
         memmove(&token[0], &token[1], toklen);          //Remove o primeiro caracter da String
-        memmove(&token[toklen-2], &token[toklen-1], 1); //Remove o último caracter da String
+        memmove(&token[toklen-2], &token[toklen-1], 1); //Remove o ultimo caracter da String
         
-        /*
-         Separa o token no delimitador "," (Presente em ID e NUM) e envia a primeira metade para o método getRecognizedState, que retorna o tipo do token
-         Caso não exista o delimitador ",", é enviado todo o token para o método getRecognizedState
-         O tipo de token é atribuído ao Token Tag
-         */
-        
-        //WARNING: Revisar o código abaixo
+        //Separa o token no delimitador "," (Presente em ID e NUM) e envia a primeira metade para o metodo getRecognizedState, que retorna o tipo do token
+        //Caso nao exista o delimitador ",", envia todo o token para o metodo getRecognizedState
+        //Atribui o tipo de token (recognizedState) ao Token Tag
         tokenTag->recognizedState = getRecognizedState(strsep(&token, ","));
         if (token != NULL)
             strcpy(tokenTag->value, token); //Atribui o valor do token em Token Tag
         
-        //WARNING: Cria um nó a mais, que fica vazio
+        //Cria o proximo elemento da lista ligada a ser preenchido pela leitura do arquivo
         tokenTag->next = malloc(sizeof(TokenTag));
         tokenTag = tokenTag->next;
         tokenTag->next = NULL;
+        //Obs.: O ultimo elemento da lista ligada sempre sera vazio, importante para evitar segmentation fault
     }
+}
+
+//Funcao do analisador sintatico
+void parser(FILE *input, FILE *output){
+    tokenTag = malloc(sizeof(TokenTag));  //Token Tag guarda as informacoes dos tokens lidos (Variavel global)
+    
+    TokenTag *head = tokenTag;  //Ponteiro que aponta para o primeiro token da lista
+    
+    readTokenList(input);
     
     tokenTag = head;
     Node *root = pProg();
     printParseTree(output, root, 0);
     
-    //Libera o espaço de memória ocupado pelos Token Tags
+    //Libera o espaco de memoria ocupado pelos Token Tags
     TokenTag *curr;
     while ((curr = head) != NULL) {
         head = head->next;
@@ -553,10 +556,10 @@ void parser(FILE *input, FILE *output){
 }
 
 // =======================================================================================
-// Árvore Sintática
+// Árvore Sintatica
 // =======================================================================================
 
-//Exibe a árvore sintática
+//Imprime a arvore sintatica no arquivo de saida
 void printParseTree(FILE *output, Node *root, int level) {
     if (root->nodeType == LEAF)
         fprintf(output, "%*s" "%d %s\r\n", level * 4, "", level, recognizedStates[root->token]);
@@ -567,10 +570,10 @@ void printParseTree(FILE *output, Node *root, int level) {
             printParseTree(output, root->childNodes[i], level);
     }
     
-    free(root); //WARNING: O que acontece com a memória ocupada quando o programa dá erro?
+    free(root);
 }
 
-//Retorna um nó vazio do tipo especificado
+//Retorna um no vazio do tipo especificado
 Node *getNode(NodeType nodeType) {
     Node *node = malloc(sizeof(Node));
     node->nodeType = nodeType;
@@ -590,12 +593,18 @@ Node *getLeaf(RecognizedState token) {
     return node;
 }
 
+//Imprime uma mensagem de erro especificando o token esperado, o token lido e a linha relevante do arquivo de tokens
 void parseError(char *expected, int linenum, char *found) {
     printf("Esperado token %s na linha %d, encontrado token %s\n", expected, linenum, found);
     exit(-1);
 }
 
-//WARNING: Implementar lookahead?
+/*
+ Verifica se o token lido e do tipo esperado.
+ Se sim, retorna uma folha com o token especificado.
+ Se nao, retorna um no vazio, ou imprime uma menssagem de erro e encerra o programa, dependendo da variavel isSyntaxError.
+ A variavel isSyntaxError sera verdadeira para os elementos gramaticais obrigatorios, e falsa para os opcionais.
+ */
 Node *parse(int expected, bool isSyntaxError) {
     Node *node = NULL;
     if (tokenTag->recognizedState == expected) {
@@ -606,10 +615,13 @@ Node *parse(int expected, bool isSyntaxError) {
     return node;
 }
 
+//Verifica se o proximo token da lista de tokens e do tipo esperado
+//Obs.: O lookahead verifica no maximo um token a frente, devido a riscos de segmentation fault
 bool lookahead(int expected) {
     return tokenTag->next->recognizedState == expected ? true : false;
 }
 
+//Foi feito um metodo diferente para cada producao gramatical
 Node *pProg() {
     Node *node = getNode(PROG);
     
@@ -760,7 +772,7 @@ Node *pTipo() {
             if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL)
                 node->childNodes[2] = parse(SYMBOL_CB, true);
             
-            return node;    //Return antecipado para evitar avançar tokenTag duas vezes
+            return node;    //Return antecipado para evitar avancar tokenTag duas vezes
         default:
             free(node);
             return NULL;
@@ -912,6 +924,7 @@ Node *pSexp() {
             tokenTag = tokenTag->next;
             break;
         case RESERVED_NEW: {
+            //Caso seja new ID (E nao, por exemplo, new int)
             if (lookahead(ID))
                 goto new_ID;
             
@@ -1008,7 +1021,7 @@ Node *pExps() {
 
 // Utilidades
 
-//Função de comparação de Strings
+//Funcao de comparacao de Strings
 int strCmp(const char *str1, int str1len, const char *str2){
     int i;
     for(i = 0; i < str1len || str2[i] != '\0'; i++){
@@ -1018,7 +1031,7 @@ int strCmp(const char *str1, int str1len, const char *str2){
     return 1;
 }
 
-//Função que remove o espaço vazio na frente de uma String
+//Funcao que remove o espaco vazio na frente de uma String
 char* rmtrail(char* s, int len){
     int i = 0;
     char *out = (char*) calloc (len + 1, sizeof(char));
@@ -1029,14 +1042,14 @@ char* rmtrail(char* s, int len){
     return out;
 }
 
-//Função que remove os espaços vazios de uma String
+//Funcao que remove os espacos vazios de uma String
 char *strtrim(char *str) {
-    while (isspace(*str)) str++;    //Remove os espaços vazios a esquerda da String
+    while (isspace(*str)) str++;    //Remove os espacos vazios a esquerda da String
 
-    if (str == 0) return str;   //Retorna a String caso esteja vazia (e.g., a String só possuia espaços vazios)
+    if (str == 0) return str;   //Retorna a String caso esteja vazia (e.g., a String so possuia espacos vazios)
     
     char *end = str + strlen(str) - 1;
-    while (end > str && isspace(*end)) end--;   //Remove os espaços vazios a direita da String
+    while (end > str && isspace(*end)) end--;   //Remove os espacos vazios a direita da String
     
     *(end+1) = '\0';
     return str;
