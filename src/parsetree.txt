@@ -1,73 +1,187 @@
-PROG
-    MAIN
-        <CLASS>
-        <ID>
-        <SYMBOL_OCB>
-        <PUBLIC>
-        <STATIC>
-        <VOID>
-        <MAIN>
-        <SYMBOL_OP>
-        <STRING>
-        <SYMBOL_OB>
-        <SYMBOL_CB>
-        <ID>
-        <SYMBOL_CP>
-        <SYMBOL_OCB>
-        <SYMBOL_CCB>
-        <SYMBOL_CCB>
-    CLASSE
-        <CLASS>
-        <ID>
-        <SYMBOL_OCB>
-        METODO
-            <PUBLIC>
-            TIPO
-                <INT>
-            <ID>
-            <SYMBOL_OP>
-            PARAMS
-                TIPO
-                    <INT>
-                <ID>
-            <SYMBOL_CP>
-            <SYMBOL_OCB>
-            VAR
-                TIPO
-                    <INT>
-                <ID>
-                <SYMBOL_SEMICOLON>
-            CMD
-                <IF>
-                <SYMBOL_OP>
-                EXP
-                    REXP
-                        AEXP
-                            MEXP
-                                SEXP
-                        <OP_MINOR>
-                        REXP
-                            AEXP
-                                MEXP
-                                    SEXP
-                                        <NUMBER>
-                <SYMBOL_CP>
-                CMD
-                    <ID>
-                    <OP_EQUAL>
-                    EXP
-                        REXP
-                            AEXP
-                                MEXP
-                                    SEXP
-                                        <NUMBER>
-                    <SYMBOL_SEMICOLON>
-            <RETURN>
-            EXP
-                REXP
-                    AEXP
-                        MEXP
-                            SEXP
-            <SYMBOL_SEMICOLON>
-            <SYMBOL_CCB>
-        <SYMBOL_CCB>
+0 <PROG>
+    1 <MAIN>
+        2 CLASS
+        2 ID
+        2 SYMBOL_OCB
+        2 PUBLIC
+        2 STATIC
+        2 VOID
+        2 MAIN
+        2 SYMBOL_OP
+        2 STRING
+        2 SYMBOL_OB
+        2 SYMBOL_CB
+        2 ID
+        2 SYMBOL_CP
+        2 SYMBOL_OCB
+        2 <CMD>
+            3 PRINT
+            3 SYMBOL_OP
+            3 <EXP>
+                4 <REXP>
+                    5 <AEXP>
+                        6 <MEXP>
+                            7 <SEXP>
+                                8 <PEXP>
+                                    9 NEW
+                                    9 ID
+                                    9 SYMBOL_OP
+                                    9 SYMBOL_CP
+                                    9 SYMBOL_DOT
+                                    9 ID
+                                    9 SYMBOL_OP
+                                    9 <EXPS>
+                                        10 <EXP>
+                                            11 <REXP>
+                                                12 <AEXP>
+                                                    13 <MEXP>
+                                                        14 <SEXP>
+                                                            15 NUMBER
+                                    9 SYMBOL_CP
+            3 SYMBOL_CP
+            3 SYMBOL_SEMICOLON
+        2 SYMBOL_CCB
+        2 SYMBOL_CCB
+    1 <CLASSE>
+        2 CLASS
+        2 ID
+        2 SYMBOL_OCB
+        2 <METODO>
+            3 PUBLIC
+            3 <TIPO>
+                4 INT
+            3 ID
+            3 SYMBOL_OP
+            3 <PARAMS>
+                4 <TIPO>
+                    5 INT
+                4 ID
+            3 SYMBOL_CP
+            3 SYMBOL_OCB
+            3 <VAR>
+                4 <TIPO>
+                    5 INT
+                4 ID
+                4 SYMBOL_SEMICOLON
+            3 <CMD>
+                4 IF
+                4 SYMBOL_OP
+                4 <EXP>
+                    5 <REXP>
+                        6 <AEXP>
+                            7 <MEXP>
+                                8 <SEXP>
+                                    9 <PEXP>
+                                        10 ID
+                        6 OP_MINOR
+                        6 <REXP>
+                            7 <AEXP>
+                                8 <MEXP>
+                                    9 <SEXP>
+                                        10 NUMBER
+                4 SYMBOL_CP
+                4 <CMD>
+                    5 ID
+                    5 OP_EQUAL
+                    5 <EXP>
+                        6 <REXP>
+                            7 <AEXP>
+                                8 <MEXP>
+                                    9 <SEXP>
+                                        10 NUMBER
+                    5 SYMBOL_SEMICOLON
+                4 ELSE
+                4 <CMD>
+                    5 ID
+                    5 OP_EQUAL
+                    5 <EXP>
+                        6 <REXP>
+                            7 <AEXP>
+                                8 <MEXP>
+                                    9 <SEXP>
+                                        10 <PEXP>
+                                            11 ID
+                                    9 OP_MULT
+                                    9 <MEXP>
+                                        10 <SEXP>
+                                            11 <PEXP>
+                                                12 SYMBOL_OP
+                                                12 <EXP>
+                                                    13 <REXP>
+                                                        14 <AEXP>
+                                                            15 <MEXP>
+                                                                16 <SEXP>
+                                                                    17 <PEXP>
+                                                                        18 THIS
+                                                                        18 SYMBOL_DOT
+                                                                        18 ID
+                                                                        18 SYMBOL_OP
+                                                                        18 <EXPS>
+                                                                            19 <EXP>
+                                                                                20 <REXP>
+                                                                                    21 <AEXP>
+                                                                                        22 <MEXP>
+                                                                                            23 <SEXP>
+                                                                                                24 <PEXP>
+                                                                                                    25 ID
+                                                                                        22 OP_MINUS
+                                                                                        22 <AEXP>
+                                                                                            23 <MEXP>
+                                                                                                24 <SEXP>
+                                                                                                    25 NUMBER
+                                                                        18 SYMBOL_CP
+                                                12 SYMBOL_CP
+                    5 SYMBOL_SEMICOLON
+            3 RETURN
+            3 <EXP>
+                4 <REXP>
+                    5 <AEXP>
+                        6 <MEXP>
+                            7 <SEXP>
+                                8 <PEXP>
+                                    9 ID
+            3 SYMBOL_SEMICOLON
+            3 SYMBOL_CCB
+        2 SYMBOL_CCB
+        2 <CLASSE>
+            3 CLASS
+            3 ID
+            3 SYMBOL_OCB
+            3 <METODO>
+                4 PUBLIC
+                4 <TIPO>
+                    5 INT
+                4 ID
+                4 SYMBOL_OP
+                4 <PARAMS>
+                    5 <TIPO>
+                        6 INT
+                    5 ID
+                4 SYMBOL_CP
+                4 SYMBOL_OCB
+                4 <VAR>
+                    5 <TIPO>
+                        6 INT
+                    5 ID
+                    5 SYMBOL_SEMICOLON
+                4 <CMD>
+                    5 ID
+                    5 OP_EQUAL
+                    5 <EXP>
+                        6 <REXP>
+                            7 <AEXP>
+                                8 <MEXP>
+                                    9 <SEXP>
+                                        10 NUMBER
+                    5 SYMBOL_SEMICOLON
+                4 RETURN
+                4 <EXP>
+                    5 <REXP>
+                        6 <AEXP>
+                            7 <MEXP>
+                                8 <SEXP>
+                                    9 <PEXP>
+                                        10 ID
+                4 SYMBOL_SEMICOLON
+                4 SYMBOL_CCB
+            3 SYMBOL_CCB

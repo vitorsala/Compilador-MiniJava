@@ -85,49 +85,49 @@ typedef enum {
     NUMBEROFSTATES    //Número total de estados
 } RecognizedState;
 
-//Vetor para mapear o número do enum com a String adequada (e.g., recognizedStates[ID] = "<ID>")
+//Vetor para mapear o número do enum com a String adequada (e.g., recognizedStates[ID] = "ID>")
 char *recognizedStates[] = {
-    "<ERROR>",
-    "<ID>",
-    "<NUMBER>",
-    "<BOOLEAN>",
-    "<CLASS>",
-    "<EXTENDS>",
-    "<PUBLIC>",
-    "<STATIC>",
-    "<VOID>",
-    "<MAIN>",
-    "<STRING>",
-    "<RETURN>",
-    "<INT>",
-    "<IF>",
-    "<ELSE>",
-    "<WHILE>",
-    "<PRINT>",
-    "<LENGTH>",
-    "<TRUE>",
-    "<FALSE>",
-    "<THIS>",
-    "<NEW>",
-    "<NULL>",
-    "<SYMBOL_OP>",
-    "<SYMBOL_CP>",
-    "<SYMBOL_OB>",
-    "<SYMBOL_CB>",
-    "<SYMBOL_OCB>",
-    "<SYMBOL_CCB>",
-    "<SYMBOL_SEMICOLON>",
-    "<SYMBOL_DOT>",
-    "<SYMBOL_COMMA>",
-    "<OP_EQUAL>",
-    "<OP_MINOR>",
-    "<OP_DOUBLEEQUALS>",
-    "<OP_DIFFERENT>",
-    "<OP_PLUS>",
-    "<OP_MINUS>",
-    "<OP_MULT>",
-    "<OP_AND>",
-    "<OP_NOT>"
+    "ERROR",
+    "ID",
+    "NUMBER",
+    "BOOLEAN",
+    "CLASS",
+    "EXTENDS",
+    "PUBLIC",
+    "STATIC",
+    "VOID",
+    "MAIN",
+    "STRING",
+    "RETURN",
+    "INT",
+    "IF",
+    "ELSE",
+    "WHILE",
+    "PRINT",
+    "LENGTH",
+    "TRUE",
+    "FALSE",
+    "THIS",
+    "NEW",
+    "NULL",
+    "SYMBOL_OP",
+    "SYMBOL_CP",
+    "SYMBOL_OB",
+    "SYMBOL_CB",
+    "SYMBOL_OCB",
+    "SYMBOL_CCB",
+    "SYMBOL_SEMICOLON",
+    "SYMBOL_DOT",
+    "SYMBOL_COMMA",
+    "OP_EQUAL",
+    "OP_MINOR",
+    "OP_DOUBLEEQUALS",
+    "OP_DIFFERENT",
+    "OP_PLUS",
+    "OP_MINUS",
+    "OP_MULT",
+    "OP_AND",
+    "OP_NOT"
 };
 
 //Representa as produções (regras) da gramática
@@ -217,7 +217,7 @@ Node *pPexp();
 Node *pExps();
 
 int strCmp(const char *str1, int str1len, const char *str2);
-//char* strtrim(char* s, int len);
+char* rmtrail(char* s, int len);
 char* strtrim(char* str);
 
 char* ids[MAX_ID_QT];
@@ -270,8 +270,7 @@ char* getToken(int id, char* word, int len){
 	char* attr;
 	if(id == ID){
         attr = (char*) calloc (len + 5, sizeof(char));
-//        char* trimmed = strtrim(word, len);
-        char* trimmed = strtrim(word);
+        char* trimmed = rmtrail(word, len);
 
 		// No caso do ID, é necessário verificar se o ID ja foi utilizado anteriormente
 		// para a recuperação do atributo do token.
@@ -280,20 +279,19 @@ char* getToken(int id, char* word, int len){
 			// Para cada ID já declarado anteriormente, verificar se o ID atual corresponde
 			// a algum dos já declarados
 			if(strCmp(trimmed, len, ids[i])){
-				sprintf(attr,"<ID,%d>",i);
+				sprintf(attr,"ID,%d",i);
 				return attr;
 			}
 			i++;
 		}
 		ids[i] = trimmed;
-		sprintf(attr,"<ID,%d>",i);
+		sprintf(attr,"ID,%d",i);
 		return attr;
 	}
 	else if(id == NUMBER){
 		// Pequeno tratamento de string para adicionar o valor do dígito ao atributo.
         attr = (char*) calloc (len + 9, sizeof(char));
-//        sprintf(attr, "<NUMBER,%s>", strtrim(word, len));
-        sprintf(attr, "<NUMBER,%s>", strtrim(word));
+        sprintf(attr, "NUMBER,%s", rmtrail(word, len));
 		return attr;
 	}
     else if (id > 2 && id < NUMBEROFSTATES) {
@@ -365,11 +363,11 @@ void lexicalAnalizer(FILE *input, FILE *output){
 						char* str = getToken(out, buffer + bufferIndex, k);
 						// output
 //						fprintf(stderr,"%s\n", str);
-						fprintf(output,"%s\n", str);
+						fprintf(output,"<%s>\r\n", str);
 
 						if(out == ERROR){
 							printf("Erro de reconhecimento lexico na linha %d\n", linenum);
-							return;
+                            exit(-1);
 						}
 
 						bufferIndex += k;
@@ -521,9 +519,9 @@ void parser(FILE *input, FILE *output){
         char *token = strtrim(line); //Remove os espaços vazios e cria um ponteiro que aponta para o token lido (Necessário para o método strsep)
         
 //        //O bloco abaixo remove os sinais de '<' e '>' do token
-//        int toklen = strlen(token); //Tamanho do token
-//        memmove(&token[0], &token[1], toklen);          //Remove o primeiro caracter da String
-//        memmove(&token[toklen-2], &token[toklen-1], 1); //Remove o último caracter da String
+        int toklen = strlen(token); //Tamanho do token
+        memmove(&token[0], &token[1], toklen);          //Remove o primeiro caracter da String
+        memmove(&token[toklen-2], &token[toklen-1], 1); //Remove o último caracter da String
         
         /*
          Separa o token no delimitador "," (Presente em ID e NUM) e envia a primeira metade para o método getRecognizedState, que retorna o tipo do token
@@ -532,15 +530,9 @@ void parser(FILE *input, FILE *output){
          */
         
         //WARNING: Revisar o código abaixo
-        if (strpbrk(token, ",") != NULL) {
-            tokenTag->recognizedState = getRecognizedState(strcat(strsep(&token, ","), ">"));
-            //O bloco abaixo remove os sinais de '<' e '>' do token
-            int toklen = strlen(token); //Tamanho do token
-            memmove(&token[toklen-1], &token[toklen], 1); //Remove o último caracter da String
+        tokenTag->recognizedState = getRecognizedState(strsep(&token, ","));
+        if (token != NULL)
             strcpy(tokenTag->value, token); //Atribui o valor do token em Token Tag
-        } else {
-            tokenTag->recognizedState = getRecognizedState(token);
-        }
         
         //WARNING: Cria um nó a mais, que fica vazio
         tokenTag->next = malloc(sizeof(TokenTag));
@@ -567,9 +559,9 @@ void parser(FILE *input, FILE *output){
 //Exibe a árvore sintática
 void printParseTree(FILE *output, Node *root, int level) {
     if (root->nodeType == LEAF)
-        fprintf(output, "%*s" "%s\n", level * 4, "", recognizedStates[root->token]);
+        fprintf(output, "%*s" "%d %s\r\n", level * 4, "", level, recognizedStates[root->token]);
     else {
-        fprintf(output, "%*s" "%s\n", level * 4, "", nodeTypes[root->nodeType]);
+        fprintf(output, "%*s" "%d <%s>\r\n", level * 4, "", level, nodeTypes[root->nodeType]);
         level++;
         for (int i = 0; root->childNodes[i] != NULL; i++)
             printParseTree(output, root->childNodes[i], level);
@@ -612,6 +604,10 @@ Node *parse(int expected, bool isSyntaxError) {
     } else if (isSyntaxError)
         parseError(recognizedStates[expected], tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
     return node;
+}
+
+bool lookahead(int expected) {
+    return tokenTag->next->recognizedState == expected ? true : false;
 }
 
 Node *pProg() {
@@ -682,10 +678,12 @@ Node *pClasse() {
 Node *pVar() {
     Node *node = getNode(VAR);
     
-    if ((node->childNodes[0] = pTipo()) == NULL)
+    if (lookahead(ID) == false || (node->childNodes[0] = pTipo()) == NULL) {
+        free(node);
         return NULL;
+    }
     
-    node->childNodes[1] = parse(ID, true); //WARNING: Retornava NULL por alguma razão
+    node->childNodes[1] = parse(ID, true);
     node->childNodes[2] = parse(SYMBOL_SEMICOLON, true);
     node->childNodes[3] = pVar();
     
@@ -696,8 +694,10 @@ Node *pMetodo() {
     Node *node = getNode(METODO);
     int childCount = 0;
     
-    if ((node->childNodes[childCount++] = parse(RESERVED_PUBLIC, false)) == NULL)
+    if ((node->childNodes[childCount++] = parse(RESERVED_PUBLIC, false)) == NULL) {
+        free(node);
         return NULL;
+    }
     
     if ((node->childNodes[childCount++] = pTipo()) == NULL)
         parseError("do tipo TIPO", tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
@@ -730,8 +730,10 @@ Node *pMetodo() {
 Node *pParams() {
     Node *node = getNode(PARAMS);
     
-    if ((node->childNodes[0] = pTipo()) == NULL)
+    if ((node->childNodes[0] = pTipo()) == NULL) {
+        free(node);
         return NULL;
+    }
     
     node->childNodes[1] = parse(ID, true);
     
@@ -760,6 +762,7 @@ Node *pTipo() {
             
             return node;    //Return antecipado para evitar avançar tokenTag duas vezes
         default:
+            free(node);
             return NULL;
     }
     
@@ -828,6 +831,7 @@ Node *pCmd() {
             } else parseError("= ou [", tokenTag->linenum, recognizedStates[tokenTag->recognizedState]);
             break;
         default:
+            free(node);
             return NULL;
     }
     
@@ -849,8 +853,10 @@ Node *pExp() {
 Node *pRexp() {
     Node *node = getNode(REXP);
     
-    if ((node->childNodes[0] = pAexp()) == NULL)
+    if ((node->childNodes[0] = pAexp()) == NULL) {
+        free(node);
         return NULL;
+    }
     
     if ((node->childNodes[1] = parse(OP_MINOR, false)) != NULL ||
         (node->childNodes[1] = parse(OP_DOUBLEEQUALS, false)) != NULL ||
@@ -863,8 +869,10 @@ Node *pRexp() {
 Node *pAexp() {
     Node *node = getNode(AEXP);
     
-    if ((node->childNodes[0] = pMexp()) == NULL)
+    if ((node->childNodes[0] = pMexp()) == NULL) {
+        free(node);
         return NULL;
+    }
     
     if ((node->childNodes[1] = parse(OP_PLUS, false)) != NULL ||
         (node->childNodes[1] = parse(OP_MINUS, false)) != NULL)
@@ -876,8 +884,10 @@ Node *pAexp() {
 Node *pMexp() {
     Node *node = getNode(MEXP);
     
-    if ((node->childNodes[0] = pSexp()) == NULL)
+    if ((node->childNodes[0] = pSexp()) == NULL) {
+        free(node);
         return NULL;
+    }
     
     if ((node->childNodes[1] = parse(OP_MULT, false)) != NULL)
         node->childNodes[2] = pMexp();
@@ -887,16 +897,6 @@ Node *pMexp() {
 
 Node *pSexp() {
     Node *node = getNode(SEXP);
-    
-    if ((node->childNodes[0] = pPexp()) == NULL)
-        return NULL;
-    
-    if ((node->childNodes[1] = parse(SYMBOL_DOT, false)) != NULL)
-        node->childNodes[2] = parse(RESERVED_LENGTH, true);
-    else if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL) {
-        node->childNodes[2] = pExp();
-        node->childNodes[3] = parse(SYMBOL_CB, true);
-    }
     
     switch (tokenTag->recognizedState) {
         case RESERVED_TRUE:
@@ -912,16 +912,9 @@ Node *pSexp() {
             tokenTag = tokenTag->next;
             break;
         case RESERVED_NEW: {
-//            //WARNING: Lookahead
-//            TokenTag *curr = tokenTag;
-//            tokenTag = tokenTag->next;
-//            
-//            if ((parse(ID, false)) != NULL) {
-//                tokenTag = curr;
-//                goto new_id;
-//            }
-//            
-//            tokenTag = curr;
+            if (lookahead(ID))
+                goto new_ID;
+            
             node->childNodes[0] = getLeaf(RESERVED_NEW);
             tokenTag = tokenTag->next;
             node->childNodes[1] = parse(RESERVED_INT, true);
@@ -930,21 +923,23 @@ Node *pSexp() {
             node->childNodes[4] = parse(SYMBOL_CB, true);
             break;
         }
-        new_id:
+        new_ID:
         default:
             if ((node->childNodes[0] = parse(OP_DIFFERENT, false)) != NULL ||
                 (node->childNodes[0] = parse(OP_MINUS, false)) != NULL)
                 node->childNodes[1] = pSexp();
             else {
-//                if ((node->childNodes[0] = pPexp()) == NULL)
-//                    return NULL;
-//                
-//                if ((node->childNodes[1] = parse(SYMBOL_DOT, false)) != NULL)
-//                    node->childNodes[2] = parse(RESERVED_LENGTH, true);
-//                else if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL) {
-//                    node->childNodes[2] = pExp();
-//                    node->childNodes[3] = parse(SYMBOL_CB, true);
-//                }
+                if ((node->childNodes[0] = pPexp()) == NULL) {
+                    free(node);
+                    return NULL;
+                }
+                
+                if ((node->childNodes[1] = parse(SYMBOL_DOT, false)) != NULL)
+                    node->childNodes[2] = parse(RESERVED_LENGTH, true);
+                else if ((node->childNodes[1] = parse(SYMBOL_OB, false)) != NULL) {
+                    node->childNodes[2] = pExp();
+                    node->childNodes[3] = parse(SYMBOL_CB, true);
+                }
             }
             
             break;
@@ -955,61 +950,45 @@ Node *pSexp() {
 
 Node *pPexp() {
     Node *node = getNode(PEXP);
+    int childCount = 0;
     
     switch (tokenTag->recognizedState) {
         case ID:
-            node->childNodes[0] = getLeaf(ID);
+            node->childNodes[childCount++] = getLeaf(ID);
             tokenTag = tokenTag->next;
             break;
         case RESERVED_THIS:
-            node->childNodes[0] = getLeaf(RESERVED_THIS);
+            node->childNodes[childCount++] = getLeaf(RESERVED_THIS);
             tokenTag = tokenTag->next;
             break;
         case RESERVED_NEW:
-            node->childNodes[0] = getLeaf(RESERVED_NEW);
+            node->childNodes[childCount++] = getLeaf(RESERVED_NEW);
             tokenTag = tokenTag->next;
-            node->childNodes[1] = parse(ID, true);
-            node->childNodes[2] = parse(SYMBOL_OP, true);
-            node->childNodes[3] = parse(SYMBOL_CP, true);
+            node->childNodes[childCount++] = parse(ID, true);
+            node->childNodes[childCount++] = parse(SYMBOL_OP, true);
+            node->childNodes[childCount++] = parse(SYMBOL_CP, true);
             break;
         case SYMBOL_OP:
-            node->childNodes[0] = getLeaf(SYMBOL_OP);
+            node->childNodes[childCount++] = getLeaf(SYMBOL_OP);
             tokenTag = tokenTag->next;
-            node->childNodes[1] = pExp();
-            node->childNodes[2] = parse(SYMBOL_CP, true);
+            node->childNodes[childCount++] = pExp();
+            node->childNodes[childCount++] = parse(SYMBOL_CP, true);
             break;
-        default: {
-//            //WARNING: Lookahead
-//            TokenTag *curr = tokenTag;
-//            tokenTag = tokenTag->next;
-//            
-//            if (parse(SYMBOL_DOT, false) == NULL) {
-//                tokenTag = curr;
-//                return NULL;
-//            }
-//            
-//            tokenTag = curr;
-//            node->childNodes[0] = pPexp();
-//            node->childNodes[1] = parse(SYMBOL_DOT, true);
-//            node->childNodes[2] = parse(ID, true);
-//            
-//            if ((node->childNodes[3] = parse(SYMBOL_OP, true)) != NULL) {
-//                node->childNodes[4] = pExps();
-//                node->childNodes[5] = parse(SYMBOL_CP, true);
-//            }
-            
-            break;
-        }
+        default:
+            free(node);
+            return NULL;
     }
     
-    if (parse(SYMBOL_DOT, false) != NULL) {
-        node->childNodes[0] = pPexp();
-        node->childNodes[1] = parse(SYMBOL_DOT, true);
-        node->childNodes[2] = parse(ID, true);
+    if (tokenTag->recognizedState == SYMBOL_DOT && lookahead(ID)) {
+        if ((node->childNodes[childCount++] = pPexp()) == NULL)
+            childCount--;
         
-        if ((node->childNodes[3] = parse(SYMBOL_OP, true)) != NULL) {
-            node->childNodes[4] = pExps();
-            node->childNodes[5] = parse(SYMBOL_CP, true);
+        node->childNodes[childCount++] = parse(SYMBOL_DOT, true);
+        node->childNodes[childCount++] = parse(ID, true);
+        
+        if ((node->childNodes[childCount++] = parse(SYMBOL_OP, false)) != NULL) {
+            node->childNodes[childCount++] = pExps();
+            node->childNodes[childCount++] = parse(SYMBOL_CP, true);
         }
     }
     
@@ -1019,8 +998,7 @@ Node *pPexp() {
 Node *pExps() {
     Node *node = getNode(EXPS);
     
-    if ((node->childNodes[0] = pExp()) == NULL)
-        return NULL;
+    node->childNodes[0] = pExp();
     
     if ((node->childNodes[2] = parse(SYMBOL_COMMA, false)) != NULL)
         node->childNodes[3] = pExp();
@@ -1040,16 +1018,16 @@ int strCmp(const char *str1, int str1len, const char *str2){
     return 1;
 }
 
-//Função que remove os espaços vazios de uma String
-//char* strtrim(char* s, int len){
-//    int i = 0;
-//    char *out = (char*) calloc (len + 1, sizeof(char));
-//    for(;i < len; i++){
-//        out[i] = s[i];
-//    }
-//    out[i] = '\0';
-//    return out;
-//}
+//Função que remove o espaço vazio na frente de uma String
+char* rmtrail(char* s, int len){
+    int i = 0;
+    char *out = (char*) calloc (len + 1, sizeof(char));
+    for(;i < len; i++){
+        out[i] = s[i];
+    }
+    out[i] = '\0';
+    return out;
+}
 
 //Função que remove os espaços vazios de uma String
 char *strtrim(char *str) {
